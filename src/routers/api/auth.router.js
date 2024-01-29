@@ -6,7 +6,9 @@ const router = Router();
 router.post('/register', async (req, res, next) => {
   try {
     const newUser = await UsersController.register(req.body);
-    res.status(201).json(newUser);
+    if (newUser) {
+      res.status(201).json(newUser);
+    }
   } catch (error) {
     next(error);
   }

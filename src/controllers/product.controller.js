@@ -1,4 +1,4 @@
-import productDao from '../dao/product.dao.js';
+import productDao from '../dao/product.mongodb.dao.js';
 
 const productController = {
     getAllProducts: async (req, res) => {

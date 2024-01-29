@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
+
+import CartModel from '../dao/models/cart.model.js';
+
 dotenv.config();
 
 const jwtSecret = process.env.SESSION_SECRET; // Usar la variable de entorno
@@ -51,29 +54,30 @@ export default class UsersController {
 
     // Controladores de auth
 
-    static async register(req, res) {
+    static async register(userData) {
         try {
-            const { email, password, ...rest } = req.body;
+            const { email, password, ...rest } = userData;
             const existingUser = await UserDao.get({ email });
 
             if (existingUser.length > 0) {
-                return res.status(400).send('El usuario ya existe.');
+                throw new Error('El usuario ya existe.'); // Lanza un error en lugar de enviar una respuesta
             }
 
             // Hashear la contraseña antes de guardarla en la base de datos
             const hashedPassword = bcrypt.hashSync(password, 10);
-
             const newUser = await UserDao.create({ email, password: hashedPassword, ...rest });
 
             // Crear un carrito vacío para el nuevo usuario
             await CartModel.create({ user: newUser._id, products: [] });
 
-            // Otras operaciones necesarias después del registro (como enviar email de bienvenida, etc.) ! ACORDARME 
+            // Otras operaciones necesarias después del registro
+            const userCart = await CartModel.findOne({ user: newUser._id }).populate('products.product');
+            console.log(userCart)
 
-
-            return res.status(201).json(newUser);
+            const updatedUser = await UserDao.getById(newUser._id);
+            return updatedUser; // Devuelve el nuevo usuario en lugar de enviar una respuesta
         } catch (error) {
-            return res.status(500).send('Error al registrar al usuario.');
+            throw error; // Lanza el error para que sea manejado por el middleware de errores
         }
     }
 
