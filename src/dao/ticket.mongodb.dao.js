@@ -30,4 +30,15 @@ export default class TicketMongoDbDao {
         const criteria = { _id: oid };
         return TicketModel.deleteOne(criteria);
     }
+
+    static async createTicket(purchaseDetails) {
+        const ticket = new TicketModel({
+            purchaser: purchaseDetails.userId,
+            amount: purchaseDetails.amount,
+            total: purchaseDetails.total,
+        });
+
+        await ticket.save();
+        return ticket;
+    }
 }
