@@ -34,7 +34,7 @@ router.get('/sms', async (req, res, next) => {
   try {
     // "+16052506976"
     let result = await client.messages.create({
-      body: 'Su suscripcion a enanasvip ha comenzado',
+      body: `Gracias por su compra, pronto estaremos en contacto contigo!`,
       from: process.env.TWILIO_SMS_NUMBER,
       to: process.env.TWILIO_SMS_TO_NUMBER
     })
