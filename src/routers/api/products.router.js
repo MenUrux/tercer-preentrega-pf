@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { buildResponsePaginated } from '../../utils.js'
-import ProductsManager from '../../dao/Products.manager.js';
-import ProductModel from '../../models/product.model.js'
+import ProductsManager from '../../dao/product.mongodb.dao.js';
+import ProductModel from '../../dao/models/product.model.js'
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get('/products', async (req, res) => {
 router.get('/products/:pid', async (req, res) => {
   try {
     const { pid } = req.params;
-    const products = await ProductsManager.getProducts();
+    const products = await ProductsManager.get();
     const product = products.find((p) => p.id === parseInt(pid));
 
     if (product) {

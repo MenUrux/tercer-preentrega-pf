@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
-
 import CartModel from '../dao/models/cart.model.js';
 
 dotenv.config();
@@ -33,8 +32,6 @@ export default class UsersController {
         return user;
     }
 
-
-
     static async update(uid, data) {
         const updateResult = await UserDao.updateById(uid, data);
         if (updateResult.modifiedCount === 0) {
@@ -55,70 +52,91 @@ export default class UsersController {
     // Controladores de auth
 
     static async register(userData) {
-        try {
-            const { email, password, ...rest } = userData;
-            const existingUser = await UserDao.get({ email });
-
-            if (existingUser.length > 0) {
-                throw new Error('El usuario ya existe.'); // Lanza un error en lugar de enviar una respuesta
-            }
-
-            // Hashear la contraseña antes de guardarla en la base de datos
-            const hashedPassword = bcrypt.hashSync(password, 10);
-            const newUser = await UserDao.create({ email, password: hashedPassword, ...rest });
-
-            // Crear un carrito vacío para el nuevo usuario
-            await CartModel.create({ user: newUser._id, products: [] });
-
-            // Otras operaciones necesarias después del registro
-            const userCart = await CartModel.findOne({ user: newUser._id }).populate('products.product');
-            console.log(userCart)
-
-            const updatedUser = await UserDao.getById(newUser._id);
-            return updatedUser; // Devuelve el nuevo usuario en lugar de enviar una respuesta
-        } catch (error) {
-            throw error; // Lanza el error para que sea manejado por el middleware de errores
-        }
+        /*   try {
+              const { email, password, ...rest } = userData;
+              const existingUser = await UserDao.get({ email });
+  
+              if (existingUser.length > 0) {
+                  throw new Error('El usuario ya existe.'); // Lanza un error en lugar de enviar una respuesta
+              }
+  
+              // Hashear la contraseña antes de guardarla en la base de datos
+              const hashedPassword = bcrypt.hashSync(password, 10);
+              const newUser = await UserDao.create({ email, password: hashedPassword, ...rest });
+  
+              // Crear un carrito vacío para el nuevo usuario
+              await CartModel.create({ user: newUser._id, products: [] });
+  
+              const userCart = await CartModel.findOne({ user: newUser._id }).populate('products.product');
+              console.log(userCart)
+  
+              const updatedUser = await UserDao.getById(newUser._id);
+              return updatedUser;
+          } catch (error) {
+              throw error;
+          } */
     }
 
     static async login(req, res) {
         try {
+
             const { email, password } = req.body;
-            const user = await UserDao.get({ email });
 
-            if (user && bcrypt.compareSync(password, user.password)) {
-                const token = jwt.sign({ userId: user._id }, jwtSecret, { expiresIn: jwtExpiration });
-                return res.json({ token });
+            try {
+                const user = await UserModel.findOne({ email });
+                if (!user || !isValidPassword(password, user)) {
+                    return res.status(401).json({ message: 'Usuario o contraseña inválidos' });
+                }
+
+                const token = generateToken(user);
+                res.status(200).json({ access_token: token });
+            } catch (error) {
+                res.status(500).json({ message: 'Error interno del servidor.' });
             }
-
-            return res.status(401).send('Credenciales inválidas.');
         } catch (error) {
             return res.status(500).send('Error al iniciar sesión.');
         }
     }
 
-    static async getProfile(req, res) {
-        try {
-            const token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, jwtSecret);
+    // static async login(req, res) {
+    //     /*    const { email, password } = req.body;
 
-            const user = await UserDao.getById(decoded.userId);
-            if (!user) {
-                return res.status(404).send('Usuario no encontrado.');
-            }
+    //        try {
+    //            const user = await User.findOne({ email });
 
-            // Omitir información sensible como la contraseña
-            const userProfile = {
-                email: user.email,
-                firstName: user.firstName,
-                lastName: user.lastName
-                // otros campos que desees incluir
-            };
+    //            if (!user || user.password !== password) {
+    //                return res.status(401).json({ message: 'Correo o contraseña inválidos.' });
+    //            }
 
-            res.json(userProfile);
-        } catch (error) {
-            return res.status(500).send('Error al obtener el perfil del usuario.');
-        }
+    //            const token = generateToken(user);
+    //            res.cookie('token', token, {
+    //                maxAge: 1000 * 60 * 60, // 1 hora
+    //                httpOnly: true,
+    //            }).status(200).json({ status: 'success', token });
+    //        } catch (error) {
+    //            res.status(500).json({ message: 'Error interno del servidor.' });
+    //        } */
+    // }
+
+    static async getCurrentUser(req, res) {
+        /*  const { token } = req.cookies;
+     
+         if (!token) {
+             return res.status(401).json({ message: 'No autorizado.' });
+         }
+     
+         try {
+             const payload = await validateToken(token);
+             const user = await User.findById(payload.id);
+     
+             if (!user) {
+                 return res.status(401).json({ message: 'No autorizado.' });
+             }
+     
+             res.status(200).json(user);
+         } catch (error) {
+             res.status(500).json({ message: 'Error interno del servidor.' });
+         } */
     }
 
     static async logout(req, res) {
